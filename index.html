@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baixador de Vídeos do Twitter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            max-width: 500px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="text"]::placeholder {
+            color: #999;
+        }
+
+        button {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-paste {
+            background: #f0f0f0;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            min-width: 100px;
+        }
+
+        .btn-paste:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-download {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 20px;
+            font-size: 16px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-download:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-download:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.show {
+            display: flex;
+        }
+
+        .message.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .message.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .message.info {
+            background: #eef;
+            color: #33c;
+            border: 1px solid #ccf;
+        }
+
+        .icon {
+            font-size: 18px;
+            min-width: 20px;
+        }
+
+        .videos-list {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .videos-list.show {
+            display: block;
+        }
+
+        .videos-list p {
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .video-item {
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .video-item:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+        }
+
+        .info-box {
+            background: #f0f4ff;
+            border: 1px solid #d0deff;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+            color: #667eea;
+        }
+
+        .info-box ul {
+            list-style-position: inside;
+            color: #666;
+        }
+
+        .info-box li {
+            margin-bottom: 4px;
+        }
+
+        .spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading {
+            display: none;
+        }
+
+        .loading.show {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Twitter Video Downloader</h1>
+            <p>Baixe vídeos de qualquer tweet em segundos</p>
+        </div>
+
+        <div class="input-group">
+            <label for="tweet-url">Cole o link do tweet</label>
+            <div class="input-wrapper">
+                <input
+                    type="text"
+                    id="tweet-url"
+                    placeholder="https://twitter.com/user/status/123456789"
+                >
+                <button class="btn-paste" onclick="pasteUrl()">Colar</button>
+            </div>
+        </div>
+
+        <div id="error-message" class="message error">
+            <span class="icon">⚠️</span>
+            <span id="error-text"></span>
+        </div>
+
+        <div id="success-message" class="message success">
+            <span class="icon">✅</span>
+            <span>Vídeo(s) encontrado(s)! Clique para baixar</span>
+        </div>
+
+        <div id="info-message" class="message info">
+            <span class="icon">ℹ️</span>
+            <span id="info-text"></span>
+        </div>
+
+        <button class="btn-download" onclick="downloadVideo()" id="btn-download">
+            <span>📥 Extrair Vídeo</span>
+        </button>
+
+        <div id="videos-list" class="videos-list">
+            <p>Versões disponíveis:</p>
+            <div id="video-items"></div>
+        </div>
+
+        <div class="info-box">
+            <strong>💡 Como usar:</strong>
+            <ul>
+                <li>Cole um link de tweet que contém vídeo</li>
+                <li>Clique em "Extrair Vídeo"</li>
+                <li>Escolha a qualidade desejada</li>
+                <li>O arquivo será baixado automaticamente</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const tweetUrlInput = document.getElementById('tweet-url');
+        const downloadBtn = document.getElementById('btn-download');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+        const successMessage = document.getElementById('success-message');
+        const infoMessage = document.getElementById('info-message');
+        const infoText = document.getElementById('info-text');
+        const videosList = document.getElementById('videos-list');
+        const videoItems = document.getElementById('video-items');
+
+        function hideAllMessages() {
+            errorMessage.classList.remove('show');
+            successMessage.classList.remove('show');
+            infoMessage.classList.remove('show');
+        }
+
+        function showError(message) {
+            hideAllMessages();
+            errorText.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        function showSuccess() {
+            hideAllMessages();
+            successMessage.classList.add('show');
+        }
+
+        function showInfo(message) {
+            hideAllMessages();
+            infoText.textContent = message;
+            infoMessage.classList.add('show');
+        }
+
+        function validateTwitterUrl(url) {
+            const patterns = [
+                /(?:https?:\/\/)?(?:www\.)?twitter\.com\/\w+\/status\/\d+/i,
+                /(?:https?:\/\/)?(?:www\.)?x\.com\/\w+\/status\/\d+/i
+            ];
+            return patterns.some(pattern => pattern.test(url));
+        }
+
+        async function pasteUrl() {
+            try {
+                const text = await navigator.clipboard.readText();
+                tweetUrlInput.value = text;
+            } catch (err) {
+                showError('Não foi possível acessar a área de transferência');
+            }
+        }
+
+        async function downloadVideo() {
+            const url = tweetUrlInput.value.trim();
+
+            hideAllMessages();
+            videosList.classList.remove('show');
+
+            if (!url) {
+                showError('Por favor, insira um link do Twitter/X');
+                return;
+            }
+
+            if (!validateTwitterUrl(url)) {
+                showError('Link inválido. Use um link de tweet do Twitter ou X');
+                return;
+            }
+
+            downloadBtn.disabled = true;
+            const originalText = downloadBtn.innerHTML;
+            downloadBtn.innerHTML = '<span class="spinner">⏳</span> Processando...';
+
+            try {
+                // Usando a API do TweetVid
+                const apiUrl = `https://api.tweetvid.com/twitter?url=${encodeURIComponent(url)}`;
+
+                showInfo('Buscando vídeo...');
+
+                const response = await fetch(apiUrl);
+
+                if (!response.ok) {
+                    throw new Error('Não foi possível extrair o vídeo do tweet');
+                }
+
+                const data = await response.json();
+
+                if (data.videos && data.videos.length > 0) {
+                    videoItems.innerHTML = '';
+                    data.videos.forEach((video, index) => {
+                        const div = document.createElement('div');
+                        div.className = 'video-item';
+                        div.innerHTML = `
+                            <span>${video.quality || `Versão ${index + 1}`}</span>
+                            <span>⬇️</span>
+                        `;
+                        div.onclick = () => {
+                            const link = document.createElement('a');
+                            link.href = video.url;
+                            link.download = `twitter_video_${Date.now()}.mp4`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                        };
+                        videoItems.appendChild(div);
+                    });
+                    videosList.classList.add('show');
+                    showSuccess();
+                } else {
+                    showError('Nenhum vídeo encontrado neste tweet');
+                }
+            } catch (err) {
+                showError(`Erro: ${err.message || 'Verifique o link e tente novamente'}`);
+            } finally {
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = originalText;
+            }
+        }
+
+        // Permitir Enter para enviar
+        tweetUrlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                downloadVideo();
+            }
+        });
+    </script>
+</body>
+</html>
